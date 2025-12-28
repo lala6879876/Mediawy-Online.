@@ -2,54 +2,60 @@ import streamlit as st
 import google.generativeai as genai
 
 # إعدادات الصفحة
-st.set_page_config(page_title="Mediawy Online 🎬", layout="centered")
+st.set_page_config(page_title="Mediawy Online", layout="centered")
 
-# تنسيق بسيط للواجهة (صلحنا الخطأ هنا)
+# تنسيق اللغة العربية
 st.markdown("""
     <style>
-    .main { text-align: right; }
-    .stTextInput, .stTextArea { direction: rtl; }
+    .main { text-align: right; direction: rtl; }
+    .stTextInput, .stTextArea { direction: rtl; text-align: right; }
     </style>
     """, unsafe_allow_html=True)
 
 st.title("Mediawy Pro - أونلاين 🎬")
 
-# إعداد مفتاح API
+# إعداد المفتاح مباشرة والموديل المستقر
 genai.configure(api_key="AIzaSyBjAufXabtLWuvQKkCitigiacpKsYRNNOE")
 
-# --- الواجهة ---
-with st.container():
-    audio_mode = st.radio("مصدر الصوت:", ["AI", "ملف خارجي"])
-    logo_file = st.file_uploader("ارفع اللوجو", type=['png', 'jpg', 'jpeg'])
+# اختيار الملفات
+logo_file = st.file_uploader("ارفع اللوجو الخاص بك", type=['png', 'jpg', 'jpeg'])
 
-# --- زر البدء ---
-if st.button("توليد السكريبت وخطة النشر 🚀"):
+# زر البدء
+if st.button("توليد خطة النشر والسكريبت 🚀"):
     if logo_file:
-        with st.spinner("جاري التحميل..."):
+        with st.spinner("جاري التوليد..."):
             try:
-                # محاولة طلب البيانات
-                model = genai.GenerativeModel('gemini-1.5-flash')
-                prompt = "اكتب نصيحة نجاح بالعامية المصرية واقترح: عنوان، وصف، تاجز، هاشتاجات، موعد نشر."
+                # استخدمنا gemini-pro لأنه الأكثر استقراراً ويمنع خطأ 404
+                model = genai.GenerativeModel('gemini-pro')
+                prompt = "اكتب نصيحة عن النجاح بالعامية المصرية. ثم اقترح: عنوان، وصف، كلمات مفتاحية، هاشتاجات، موعد نشر."
                 
                 response = model.generate_content(prompt)
                 res_text = response.text
 
-                st.success("✅ البيانات جاهزة")
+                st.success("✅ تم استلام البيانات")
 
-                # تقسيم النص لعرضه في الـ 5 مستطيلات
+                # تقسيم النص افتراضياً لعرضه في المستطيلات
                 lines = res_text.split('\n')
+
+                # المستطيلات الخمسة المطلوبة
+                st.subheader("🚀 خطة النشر المقترحة")
                 
-                st.divider()
-                # المستطيلات الخمسة
-                st.text_input("📌 العنوان:", value=lines[0] if len(lines)>0 else "")
-                st.text_area("📝 الوصف الكامل:", value=res_text, height=120)
-                st.text_input("🔍 الكلمات المفتاحية:", value="نجاح، تحفيز، ميدياوي")
-                st.text_input("🏷️ الهاشتاجات:", value="#نجاح #shorts #ميدياوي")
-                st.info(f"⏰ موعد النشر: {lines[-1] if len(lines)>1 else 'مساء اليوم'}")
+                st.text_input("1️⃣ عنوان الفيديو:", value=lines[0] if len(lines) > 0 else "")
+                
+                st.text_area("2️⃣ وصف الفيديو (Description):", value=res_text, height=150)
+                
+                st.text_input("3️⃣ الكلمات المفتاحية (Tags):", value="نجاح، تحفيز، ميدياوي، تطوير الذات")
+                
+                st.text_input("4️⃣ الهاشتاجات (Hashtags):", value="#نجاح #تطوير_ذات #ميدياوي #shorts")
+                
+                st.info(f"5️⃣ موعد النشر المثالي: مساء اليوم الساعة 8")
+
+                st.balloons()
                 
             except Exception as e:
-                st.error(f"عذراً، حاول مرة أخرى: {str(e)}")
+                st.error(f"حدث خطأ: {str(e)}")
     else:
-        st.warning("ارفع اللوجو أولاً")
+        st.warning("برجاء رفع اللوجو أولاً")
 
-st.caption("Mediawy Pro v2.6")
+st.markdown("---")
+st.caption("برمجة وتطوير ميدياوي © 2025")
