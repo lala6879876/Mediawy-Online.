@@ -1,65 +1,65 @@
 import streamlit as st
 import google.generativeai as genai
+from gtts import gTTS
+from moviepy.editor import ImageClip, AudioFileClip
+import os
 
-# إعدادات الصفحة
-st.set_page_config(page_title="Mediawy Online Pro", layout="centered")
+st.set_page_config(page_title="Mediawy Video Maker", layout="centered")
 
-# تنسيق RTL للعربية
-st.markdown("""<style>.main {text-align: right; direction: rtl;} .stTextInput, .stTextArea {direction: rtl; text-align: right;}</style>""", unsafe_allow_html=True)
-
-st.title("Mediawy Pro - النسخة الاحترافية 🎬")
-
-# سحب المفتاح من Secrets
+# إعداد الذكاء الاصطناعي
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 else:
-    st.error("⚠️ خطأ: المفتاح غير موجود في Secrets!")
+    st.error("المفتاح غير موجود!")
     st.stop()
 
-# --- 1. اختيار الصوت (فوق) ---
-st.subheader("🎤 أولاً: نوع التعليق الصوتي")
-audio_mode = st.radio("", ["ذكاء اصطناعي (AI)", "صوت بشري (ملف)"], label_visibility="collapsed")
-if audio_mode == "صوت بشري (ملف)":
-    st.file_uploader("ارفع ملف الـ MP3", type=['mp3'])
+st.title("Mediawy Pro - مصنع الفيديوهات 🎬")
 
-st.divider()
+# المدخلات
+audio_mode = st.radio("مصدر الصوت:", ["ذكاء اصطناعي (AI)", "رفع ملف خارجي"])
+logo_file = st.file_uploader("ارفع اللوجو الخاص بك", type=['png', 'jpg', 'jpeg'])
 
-# --- 2. رفع اللوجو ---
-st.subheader("🖼️ ثانياً: ارفع اللوجو")
-logo_file = st.file_uploader("", type=['png', 'jpg', 'jpeg'], label_visibility="collapsed")
-
-# --- زر الإنتاج ---
-if st.button("توليد السكريبت وخطة النشر 🚀"):
+if st.button("صناعة الفيديو الآن 🚀"):
     if logo_file:
-        with st.spinner("جاري فحص الموديلات وتوليد المحتوى..."):
+        with st.spinner("جاري توليد السكريبت والصوت والفيديو..."):
             try:
-                # الحركة السحرية: بنسأل جوجل إيه الموديل اللي شغال عندك يا ست الكل؟
-                available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+                # 1. توليد النص
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                response = model.generate_content("اكتب نصيحة نجاح قصيرة جداً بالعامية المصرية.")
+                script = response.text
                 
-                # بننقي أحسن واحد (1.5 flash) لو موجود، لو مش موجود بياخد أول واحد
-                target_model = next((m for m in available_models if "1.5-flash" in m), available_models[0])
-
-                model = genai.GenerativeModel(target_model)
-                prompt = "اكتب نصيحة عن النجاح بالعامية المصرية. ثم اقترح في أسطر منفصلة: عنوان، وصف، كلمات مفتاحية، هاشتاجات، موعد نشر."
-                response = model.generate_content(prompt)
+                # 2. تحويل النص لصوت (gTTS)
+                tts = gTTS(text=script, lang='ar')
+                tts.save("voice.mp3")
                 
-                st.success(f"✅ تم الاتصال بنجاح!")
-                res_text = response.text
-                lines = res_text.split('\n')
+                # 3. حفظ اللوجو مؤقتاً
+                with open("temp_logo.png", "wb") as f:
+                    f.write(logo_file.getbuffer())
                 
-                # الـ 5 مستطيلات
+                # 4. صناعة الفيديو (MoviePy)
+                audio_clip = AudioFileClip("voice.mp3")
+                # عمل فيديو مدته على قد مدة الصوت
+                video_clip = ImageClip("temp_logo.png").set_duration(audio_clip.duration)
+                video_clip = video_clip.set_audio(audio_clip)
+                
+                # تصدير الفيديو
+                video_clip.write_videofile("final_video.mp4", fps=24, codec="libx264")
+                
+                # 5. عرض النتائج
+                st.success("✅ تم صناعة الفيديو بنجاح!")
+                st.video("final_video.mp4") # هنا الفيديو هيظهر قدامك
+                
+                with open("final_video.mp4", "rb") as file:
+                    st.download_button("تحميل الفيديو 📥", file, "mediawy_video.mp4")
+                
+                # عرض البيانات تحت الفيديو
                 st.divider()
-                st.subheader("📋 خطة النشر والـ SEO")
-                st.text_input("1️⃣ العنوان المقترح:", value=lines[0] if len(lines) > 0 else "")
-                st.text_area("2️⃣ الوصف الكامل (Description):", value=res_text, height=150)
-                st.text_input("3️⃣ الكلمات المفتاحية (Tags):", value="نجاح، ميدياوي، تطوير")
-                st.text_input("4️⃣ الهاشتاجات (Hashtags):", value="#نجاح #ميدياوي #shorts")
-                st.info(f"5️⃣ موعد النشر: اليوم الساعة 8 مساءً")
-                st.balloons()
+                st.subheader("📋 خطة النشر")
+                st.text_area("السكريبت المستخدم:", script)
                 
             except Exception as e:
-                st.error(f"حدث خطأ: {str(e)}")
+                st.error(f"حدث خطأ أثناء الرندرة: {str(e)}")
     else:
-        st.warning("برجاء رفع اللوجو أولاً")
+        st.warning("لازم ترفع اللوجو عشان نركبه على الفيديو!")
 
 st.caption("برمجة وتطوير ميدياوي © 2025")
