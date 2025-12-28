@@ -5,3 +5,9 @@ google-generativeai>=0.8.3
 gTTS
 moviepy==1.0.3
 Pillow
+streamlit
+google-generativeai
+gTTS
+moviepy==1.0.3
+Pillow
+requests
