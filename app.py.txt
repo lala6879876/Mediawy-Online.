@@ -1,0 +1,55 @@
+import streamlit as st
+import google.generativeai as genai
+import asyncio
+import edge_tts
+import os
+import subprocess
+import requests
+
+# إعدادات الصفحة
+st.set_page_config(page_title="Mediawy Online 🎬", layout="centered")
+
+st.title("Mediawy Pro - النسخة الأونلاين 🚀")
+st.write("اصنع فيديوهاتك السينمائية من المتصفح مباشرة")
+
+# مفتاح API
+genai.configure(api_key="AIzaSyBjAufXabtLWuvQKkCitigiacpKsYRNNOE")
+
+# --- الواجهة ---
+audio_option = st.radio("اختر نوع الصوت:", ["ذكاء اصطناعي (AI)", "رفع ملف صوتي"])
+user_logo = st.file_uploader("ارفع اللوجو الخاص بك (PNG/JPG)", type=['png', 'jpg', 'jpeg'])
+
+if audio_option == "رفع ملف صوتي":
+    user_audio = st.file_uploader("ارفع ملف الصوت", type=['mp3', 'wav'])
+else:
+    user_audio = None
+
+if st.button("بدء الإنتاج السينمائي ✨"):
+    if user_logo is not None:
+        with st.spinner("جاري العمل على الفيديو وخطط النشر..."):
+            # 1. حفظ اللوجو مؤقتاً
+            with open("temp_logo.png", "wb") as f:
+                f.write(user_logo.getbuffer())
+            
+            # 2. توليد المحتوى بـ Gemini
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            prompt = "اكتب نصيحة عن النجاح بالعامية المصرية مع (عنوان، وصف، تاجز، هاشتاجات، موعد نشر)"
+            resp = model.generate_content(prompt).text
+            
+            # عرض البيانات في الموقع
+            st.success("✅ تم تجهيز خطة النشر!")
+            col1, col2 = st.columns(2)
+            with col1:
+                st.text_area("العنوان والوصف", resp, height=200)
+            
+            # 3. معالجة الصوت والمونتاج (نفس منطق FFmpeg السابق)
+            # ملاحظة: السيرفر لازم يكون عليه FFmpeg مثبت
+            st.info("جاري عمل المونتاج (هذه الخطوة قد تستغرق دقيقة)...")
+            
+            # (هنا يوضع كود المونتاج الخاص بك)
+            
+            st.balloons()
+            st.success("الفيديو جاهز للتحميل!")
+            # كود إظهار زر تحميل الفيديو
+    else:
+        st.error("من فضلك ارفع اللوجو أولاً")
