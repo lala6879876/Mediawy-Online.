@@ -2,79 +2,72 @@ import streamlit as st
 import google.generativeai as genai
 from gtts import gTTS
 import PIL.Image
-# الحل السحري لمشكلة ANTIALIAS
 if not hasattr(PIL.Image, 'ANTIALIAS'):
     PIL.Image.ANTIALIAS = PIL.Image.LANCZOS
 from moviepy.editor import *
 import requests
 import os
+import random
 
-# إعدادات الصفحة
-st.set_page_config(page_title="Mediawy Shorts Maker", layout="centered")
+st.set_page_config(page_title="Mediawy Shorts Pro", layout="centered")
 
-# تنسيق RTL
-st.markdown("""<style>.main {text-align: right; direction: rtl;} .stTextInput, .stTextArea {direction: rtl; text-align: right;}</style>""", unsafe_allow_html=True)
-
-st.title("Mediawy Shorts Creator 🎬✨")
-
-# إعداد المفتاح من Secrets
+# إعدادات API
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 else:
-    st.error("المفتاح غير موجود في Secrets!")
+    st.error("المفتاح غير موجود!")
     st.stop()
 
-# --- 1. قسم الصوت ---
-st.subheader("🎤 مصدر الصوت")
-audio_mode = st.radio("", ["ذكاء اصطناعي (AI)", "صوت بشرى (WAV/MP3)"], label_visibility="collapsed")
+st.title("Mediawy Shorts Creator 🎬🔥")
 
+# --- المدخلات ---
+audio_mode = st.radio("مصدر الصوت:", ["ذكاء اصطناعي (AI)", "صوت بشرى (WAV/MP3)"])
 user_audio_file = None
 if audio_mode == "صوت بشرى (WAV/MP3)":
-    user_audio_file = st.file_uploader("ارفع تسجيلك الصوتي (WAV أو MP3)", type=['wav', 'mp3'])
+    user_audio_file = st.file_uploader("ارفع تسجيلك الصوتي", type=['wav', 'mp3'])
 
-st.divider()
+logo_file = st.file_uploader("ارفع لوجو القناة", type=['png', 'jpg', 'jpeg'])
 
-# --- 2. قسم اللوجو ---
-st.subheader("🖼️ ارفع لوجو القناة")
-logo_file = st.file_uploader("", type=['png', 'jpg', 'jpeg'], label_visibility="collapsed")
-
-# --- زر الإنتاج ---
-if st.button("صناعة فيديو شورتس الآن 🚀"):
+if st.button("صناعة فيديو احترافي بنقلات 🚀"):
     if logo_file:
-        if audio_mode == "صوت بشرى (WAV/MP3)" and user_audio_file is None:
-            st.warning("ارفع ملف الويف (WAV) الأول!")
-            st.stop()
-            
-        with st.spinner("جاري الرندرة... قد يستغرق الأمر دقيقة"):
+        with st.spinner("جاري جلب الصور وعمل تأثيرات الزوم والرندرة..."):
             try:
                 # 1. إعداد الصوت
                 if audio_mode == "ذكاء اصطناعي (AI)":
                     available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
                     target_model = next((m for m in available_models if "1.5-flash" in m), available_models[0])
                     model = genai.GenerativeModel(target_model)
-                    res = model.generate_content("اكتب نصيحة دينية قصيرة جداً بالعامية المصرية.")
-                    script = res.text
-                    tts = gTTS(text=script, lang='ar')
+                    res = model.generate_content("اكتب نصيحة نجاح قصيرة جداً بالعامية المصرية.")
+                    tts = gTTS(text=res.text, lang='ar')
                     tts.save("temp_audio.mp3")
                     audio = AudioFileClip("temp_audio.mp3")
                 else:
                     ext = user_audio_file.name.split('.')[-1]
-                    audio_path = f"user_audio.{ext}"
-                    with open(audio_path, "wb") as f:
-                        f.write(user_audio_file.getbuffer())
-                    audio = AudioFileClip(audio_path)
+                    with open(f"user_audio.{ext}", "wb") as f: f.write(user_audio_file.getbuffer())
+                    audio = AudioFileClip(f"user_audio.{ext}")
 
                 duration = audio.duration
+                part_duration = duration / 3  # تقسيم الوقت على 3 صور
 
-                # 2. جلب خلفية شورتس
-                img_url = "https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?q=80&w=1080&h=1920&auto=format&fit=crop"
-                img_data = requests.get(img_url).content
-                with open("bg.jpg", "wb") as f: f.write(img_data)
+                # 2. جلب 5 صور وعمل زوم لكل واحدة
+                clips = []
+                keywords = ["nature", "success", "dark", "motivation"]
+                for i in range(3):
+                    img_url = f"https://images.unsplash.com/photo-{random.randint(1000,9000)}?q=80&w=1080&h=1920&auto=format&fit=crop"
+                    img_data = requests.get(img_url).content
+                    img_path = f"bg_{i}.jpg"
+                    with open(img_path, "wb") as f: f.write(img_data)
+                    
+                    # صنع الكليب مع تأثير الزوم
+                    clip = ImageClip(img_path).set_duration(part_duration).resize(height=1920)
+                    # تأثير الزوم: يبدأ من حجم 100% ويصل لـ 110%
+                    clip = clip.fx(vfx.resize, lambda t: 1 + 0.02*t) 
+                    clips.append(clip)
 
-                # 3. بناء الفيديو (1080x1920)
-                bg = ImageClip("bg.jpg").set_duration(duration).resize(height=1920)
+                # 3. دمج الصور المتتالية
+                bg_video = concatenate_videoclips(clips, method="compose")
 
-                # 4. اللوجو (أعلى اليمين)
+                # 4. إضافة اللوجو (أعلى اليمين)
                 with open("logo_temp.png", "wb") as f: f.write(logo_file.getbuffer())
                 logo = (ImageClip("logo_temp.png")
                         .resize(width=180)
@@ -82,22 +75,19 @@ if st.button("صناعة فيديو شورتس الآن 🚀"):
                         .set_position(("right", "top"))
                         .margin(right=30, top=30, opacity=0))
 
-                # 5. الدمج النهائي
-                final = CompositeVideoClip([bg, logo], size=(1080, 1920))
+                # 5. الإنتاج النهائي
+                final = CompositeVideoClip([bg_video, logo], size=(1080, 1920))
                 final = final.set_audio(audio)
                 
-                output_file = "mediawy_shorts.mp4"
+                output_file = "pro_shorts.mp4"
                 final.write_videofile(output_file, fps=24, codec="libx264", audio_codec="aac")
 
-                st.success("✅ تم حل المشكلة التقنية والفيديو جاهز!")
+                st.success("✅ تم صناعة فيديو احترافي بنقلات وزوم!")
                 st.video(output_file)
-                
-                with open(output_file, "rb") as f:
-                    st.download_button("تحميل الفيديو 📥", f, "mediawy_shorts.mp4")
 
             except Exception as e:
-                st.error(f"حدث خطأ أثناء الرندرة: {str(e)}")
+                st.error(f"حدث خطأ: {str(e)}")
     else:
-        st.warning("ارفع اللوجو أولاً!")
+        st.warning("ارفع اللوجو الأول!")
 
-st.caption("برمجة وتطوير ميدياوي © 2025")
+st.caption("Mediawy Pro © 2025")
