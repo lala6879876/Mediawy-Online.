@@ -5,23 +5,24 @@ import os
 # إعدادات الصفحة
 st.set_page_config(page_title="Mediawy Online 🎬", layout="centered")
 
-# --- تنسيق التصميم (CSS) لجعل الواجهة أجمل ---
+# تنسيق النصوص لتظهر من اليمين لليسار (RTL)
 st.markdown("""
     <style>
     .main { text-align: right; }
+    div.stButton > button:first-child { width: 100%; }
     .stTextInput, .stTextArea { direction: rtl; }
     </style>
     """, unsafe_allow_type=True)
 
 st.title("Mediawy Pro - النسخة الأونلاين 🎬")
-st.subheader("منصة صناعة المحتوى الذكي")
+st.subheader("أهلاً بك يا محمد في منصتك الذكية")
 
 # إعداد مفتاح API
 API_KEY = "AIzaSyBjAufXabtLWuvQKkCitigiacpKsYRNNOE"
 genai.configure(api_key=API_KEY)
 
-# --- الواجهة ---
-with st.expander("⚙️ إعدادات الفيديو", expanded=True):
+# --- واجهة المستخدم ---
+with st.expander("⚙️ إعدادات المحتوى", expanded=True):
     audio_mode = st.radio("اختر مصدر الصوت:", ["ذكاء اصطناعي (AI)", "رفع ملف خارجي"])
     if audio_mode == "رفع ملف خارجي":
         st.file_uploader("ارفع ملف الـ MP3", type=['mp3'])
@@ -34,26 +35,26 @@ if st.button("توليد السكريبت وخطة النشر 🚀"):
         with st.spinner("جاري التواصل مع الذكاء الاصطناعي..."):
             try:
                 # محاولة استخدام الموديل المتاح
-                model_name = 'gemini-1.5-flash'
+                model = genai.GenerativeModel('gemini-1.5-flash')
+                prompt = "اكتب نصيحة عن النجاح بالعامية المصرية ثم اقترح (عنوان، وصف، كلمات مفتاحية، هاشتاجات، موعد نشر) في أسطر منفصلة."
+                
                 try:
-                    model = genai.GenerativeModel(model_name)
-                    prompt = "اكتب نصيحة عن النجاح بالعامية المصرية ثم اقترح (عنوان، وصف، كلمات مفتاحية، هاشتاجات، موعد نشر) في أسطر منفصلة."
                     response = model.generate_content(prompt)
                     res_text = response.text
                 except:
-                    # إذا فشل الفلاش نستخدم البرو (حل مشكلة 404)
-                    model = genai.GenerativeModel('gemini-pro')
-                    response = model.generate_content(prompt)
+                    # حل احتياطي لو الفلاش مش متاح
+                    model_alt = genai.GenerativeModel('gemini-pro')
+                    response = model_alt.generate_content(prompt)
                     res_text = response.text
 
-                st.success("✅ تم استلام البيانات من الذكاء الاصطناعي")
+                st.success("✅ تم توليد البيانات بنجاح!")
 
-                # تقسيم النص لمحاكاة المستطيلات الخمسة
+                # تقسيم النص لمحاكاة المستطيلات
                 lines = res_text.split('\n')
                 
                 # --- عرض النتائج في المستطيلات الخمسة ---
                 st.markdown("---")
-                st.text_input("📌 العنوان المقترح:", value=lines[0] if len(lines)>0 else "عنوان الفيديو")
+                st.text_input("📌 العنوان المقترح:", value=lines[0] if len(lines)>0 else "عنوان جذاب للفيديو")
                 st.text_area("📝 الوصف الاحترافي (Description):", value=res_text, height=150)
                 st.text_input("🔍 الكلمات المفتاحية (Tags):", value="نجاح، تحفيز، ميدياوي، تطوير الذات")
                 st.text_input("🏷️ الهاشتاجات (Hashtags):", value="#نجاح #تطوير_ذات #ميدياوي #shorts")
@@ -63,4 +64,8 @@ if st.button("توليد السكريبت وخطة النشر 🚀"):
                 
             except Exception as e:
                 st.error(f"حدث خطأ في النظام: {str(e)}")
-                st.info("تأكد من صلاحية مفتاح ال
+    else:
+        st.warning("من فضلك ارفع اللوجو أولاً لتفعيل النظام")
+
+st.markdown("---")
+st.caption("برمجة وتطوير ميدياوي © 2025")
