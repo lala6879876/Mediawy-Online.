@@ -1,6 +1,10 @@
 import streamlit as st
 import google.generativeai as genai
 from gtts import gTTS
+import PIL.Image
+# الحل السحري لمشكلة ANTIALIAS
+if not hasattr(PIL.Image, 'ANTIALIAS'):
+    PIL.Image.ANTIALIAS = PIL.Image.LANCZOS
 from moviepy.editor import *
 import requests
 import os
@@ -20,7 +24,7 @@ else:
     st.error("المفتاح غير موجود في Secrets!")
     st.stop()
 
-# --- 1. قسم الصوت (بشرى ويف أو AI) ---
+# --- 1. قسم الصوت ---
 st.subheader("🎤 مصدر الصوت")
 audio_mode = st.radio("", ["ذكاء اصطناعي (AI)", "صوت بشرى (WAV/MP3)"], label_visibility="collapsed")
 
@@ -41,7 +45,7 @@ if st.button("صناعة فيديو شورتس الآن 🚀"):
             st.warning("ارفع ملف الويف (WAV) الأول!")
             st.stop()
             
-        with st.spinner("جاري معالجة الصوت والرندرة..."):
+        with st.spinner("جاري الرندرة... قد يستغرق الأمر دقيقة"):
             try:
                 # 1. إعداد الصوت
                 if audio_mode == "ذكاء اصطناعي (AI)":
@@ -54,7 +58,6 @@ if st.button("صناعة فيديو شورتس الآن 🚀"):
                     tts.save("temp_audio.mp3")
                     audio = AudioFileClip("temp_audio.mp3")
                 else:
-                    # حفظ ملف الويف المرفوع
                     ext = user_audio_file.name.split('.')[-1]
                     audio_path = f"user_audio.{ext}"
                     with open(audio_path, "wb") as f:
@@ -63,7 +66,7 @@ if st.button("صناعة فيديو شورتس الآن 🚀"):
 
                 duration = audio.duration
 
-                # 2. جلب خلفية شورتس تلقائية
+                # 2. جلب خلفية شورتس
                 img_url = "https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?q=80&w=1080&h=1920&auto=format&fit=crop"
                 img_data = requests.get(img_url).content
                 with open("bg.jpg", "wb") as f: f.write(img_data)
@@ -86,15 +89,15 @@ if st.button("صناعة فيديو شورتس الآن 🚀"):
                 output_file = "mediawy_shorts.mp4"
                 final.write_videofile(output_file, fps=24, codec="libx264", audio_codec="aac")
 
-                st.success("✅ الفيديو جاهز بصوتك الويف!")
+                st.success("✅ تم حل المشكلة التقنية والفيديو جاهز!")
                 st.video(output_file)
                 
                 with open(output_file, "rb") as f:
                     st.download_button("تحميل الفيديو 📥", f, "mediawy_shorts.mp4")
 
             except Exception as e:
-                st.error(f"حدث خطأ: {str(e)}")
+                st.error(f"حدث خطأ أثناء الرندرة: {str(e)}")
     else:
-        st.warning("ارفع اللوجو عشان نبدأ!")
+        st.warning("ارفع اللوجو أولاً!")
 
 st.caption("برمجة وتطوير ميدياوي © 2025")
